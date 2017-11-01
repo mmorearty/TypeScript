@@ -380,10 +380,13 @@ namespace ts.Completions {
         // We don't need to perform character checks here because we're only comparing the
         // name against 'entryName' (which is known to be good), not building a new
         // completion entry.
-        const symbol = find(symbols, s =>
-            getCompletionEntryDisplayNameForSymbol(s, compilerOptions.target, /*performCharacterChecks*/ false, allowStringLiteral) === name
-            && getSourceFromOrigin(symbolToOriginInfoMap[getSymbolId(s)]) === source);
+        // Note: if we didn't find a name+source match, look for just a name match in case the editor forgot to send us the source.
+        let symbol = find(symbols, s => nameMatches(s) && getSourceFromOrigin(symbolToOriginInfoMap[getSymbolId(s)]) === source) || find(symbols, nameMatches);
         return symbol ? { type: "symbol", symbol, location, symbolToOriginInfoMap } : { type: "none" };
+
+        function nameMatches(s: Symbol): boolean {
+            return getCompletionEntryDisplayNameForSymbol(s, compilerOptions.target, /*performCharacterChecks*/ false, allowStringLiteral) === name;
+        }
     }
 
     export interface CompletionEntryIdentifier {
